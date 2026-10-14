@@ -1,0 +1,394 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>CyberCore Pro | Cyber Dashboard</title>
+<style>
+:root {
+  --green:#39ff88;
+  --bg:#050807;
+  --panel:#0a110e;
+  --border:#193d2a;
+  --muted:#8aa696;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+body{
+  background:var(--bg);color:#e1f8e9;
+  font:14px Consolas,"Courier New",monospace;
+  min-height:100vh;
+}
+button,input{font:inherit}
+button{cursor:pointer}
+#matrix{
+  position:fixed;inset:0;width:100%;height:100%;
+  opacity:.12;pointer-events:none;z-index:0;
+}
+.app{position:relative;z-index:1;min-height:100vh}
+header{
+  height:70px;border-bottom:1px solid var(--border);
+  display:flex;align-items:center;justify-content:space-between;
+  padding:0 25px;background:#050807eF;gap:15px;
+}
+.brand{font-size:21px;font-weight:bold;color:var(--green)}
+.brand span{color:white}
+.status{color:var(--green);font-size:12px}
+.layout{display:flex;min-height:calc(100vh - 70px)}
+aside{
+  width:220px;flex-shrink:0;border-right:1px solid var(--border);
+  padding:25px 14px;background:#070c09eF;
+}
+.label{color:#557563;font-size:10px;letter-spacing:2px;margin:8px 10px 14px}
+.nav{
+  display:block;width:100%;text-align:left;color:var(--muted);
+  padding:13px 12px;margin-bottom:5px;border:1px solid transparent;
+  background:transparent;border-radius:5px;
+}
+.nav:hover,.nav.active{
+  color:var(--green);background:#10251a;border-color:var(--border);
+}
+main{flex:1;min-width:0;padding:28px}
+h1{font-size:clamp(22px,3vw,32px);margin-bottom:10px}
+.green{color:var(--green)}
+.subtitle{color:var(--muted);line-height:1.7}
+.topline{display:flex;justify-content:space-between;align-items:center;gap:15px;flex-wrap:wrap;margin-bottom:25px}
+.clock{color:var(--green);font-size:16px}
+.grid{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:14px;margin-bottom:22px}
+.panel{
+  background:#0a110eeb;border:1px solid var(--border);
+  border-radius:7px;padding:19px;min-width:0;
+}
+.stat-label{font-size:11px;color:var(--muted);margin-bottom:13px}
+.stat-number{font-size:23px;color:var(--green);font-weight:bold}
+.stat-foot{font-size:10px;color:#668775;margin-top:10px}
+.columns{display:grid;grid-template-columns:1.35fr 1fr;gap:16px}
+.panel-title{font-weight:bold;color:var(--green);margin-bottom:17px}
+.terminal{
+  height:265px;overflow:auto;background:#030605;
+  border:1px solid #152b1e;padding:15px;border-radius:4px;
+  font-size:12px;line-height:1.9;white-space:pre-wrap;
+  overflow-wrap:anywhere;
+}
+.line{color:#a3cbb0}
+.prompt{color:var(--green)}
+.command-row{display:flex;gap:8px;margin-top:12px}
+.command-row input{
+  flex:1;min-width:0;background:#030605;color:var(--green);
+  border:1px solid var(--border);padding:12px;outline:none;
+}
+.command-row input:focus{border-color:var(--green)}
+.action{
+  background:#10271a;color:var(--green);
+  border:1px solid var(--border);padding:11px 13px;border-radius:3px;
+}
+.action:hover{background:#183b26}
+.tools{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.tool{
+  background:#080e0b;border:1px solid var(--border);
+  padding:15px 12px;text-align:left;color:white;border-radius:4px;
+}
+.tool:hover{border-color:var(--green);transform:translateY(-2px)}
+.tool b{display:block;color:var(--green);margin-bottom:9px}
+.tool small{color:var(--muted);line-height:1.5}
+.log{font-size:12px;line-height:2;color:var(--muted)}
+.log span{color:var(--green)}
+.progress{height:5px;background:#17231b;margin-top:8px;border-radius:5px;overflow:hidden}
+.progress div{height:100%;background:var(--green);width:0;transition:width .5s}
+footer{padding:22px 0;color:#557563;font-size:11px}
+.mobile-menu{display:none}
+.page{display:none}
+.page.active{display:block}
+@media(max-width:1000px){
+ .grid{grid-template-columns:repeat(2,minmax(0,1fr))}
+ .columns{grid-template-columns:1fr}
+}
+@media(max-width:650px){
+ header{padding:0 15px;height:62px}
+ .brand{font-size:17px}
+ .status{font-size:10px}
+ .mobile-menu{display:block}
+ .layout{display:block;min-height:calc(100vh - 62px)}
+ aside{display:none;width:100%;border-right:0;border-bottom:1px solid var(--border);padding:12px}
+ aside.open{display:block}
+ main{padding:20px 13px}
+ .grid{gap:9px}
+ .panel{padding:13px}
+ .stat-number{font-size:18px}
+ .stat-label{font-size:10px}
+ .tools{gap:8px}
+ .tool{padding:12px 9px}
+}
+</style>
+</head>
+<body>
+<canvas id="matrix"></canvas>
+<div class="app">
+<header>
+  <div class="brand">CYBER<span>CORE</span> <small style="font-size:10px">PRO</small></div>
+  <div style="display:flex;align-items:center;gap:15px">
+    <span class="status">● DEMO MODE</span>
+    <button class="action mobile-menu" id="menuBtn">☰</button>
+  </div>
+</header>
+
+<div class="layout">
+<aside id="sidebar">
+  <div class="label">MAIN MENU</div>
+  <button class="nav active" data-page="dashboard">⌂ &nbsp; Dashboard</button>
+  <button class="nav" data-page="terminal">›_ &nbsp; Terminal</button>
+  <button class="nav" data-page="security">⬡ &nbsp; Security Lab</button>
+  <button class="nav" data-page="activity">◷ &nbsp; Activity Logs</button>
+  <div class="label" style="margin-top:28px">SYSTEM</div>
+  <button class="nav" data-page="about">ⓘ &nbsp; About Project</button>
+  <div style="margin:30px 10px;color:#668775;font-size:11px;line-height:2">
+    <span class="green">●</span> Interface online<br>
+    Local demo environment
+  </div>
+</aside>
+
+<main>
+<div class="topline">
+ <div>
+  <h1 id="pageTitle">System <span class="green">Overview</span></h1>
+  <p class="subtitle" id="pageDesc">Welcome back, operator. Your cyber dashboard is ready.</p>
+ </div>
+ <div class="clock" id="clock">00:00:00</div>
+</div>
+
+<section class="page active" id="dashboard">
+ <div class="grid">
+  <div class="panel">
+   <div class="stat-label">INTERFACE STATUS</div>
+   <div class="stat-number">ONLINE</div>
+   <div class="stat-foot">● UI running locally</div>
+  </div>
+  <div class="panel">
+   <div class="stat-label">DEMO COMMANDS</div>
+   <div class="stat-number" id="cmdCount">0</div>
+   <div class="stat-foot">Commands executed this session</div>
+  </div>
+  <div class="panel">
+   <div class="stat-label">SECURITY SCORE</div>
+   <div class="stat-number">DEMO</div>
+   <div class="stat-foot">Not a real security assessment</div>
+  </div>
+  <div class="panel">
+   <div class="stat-label">LOCAL TIME</div>
+   <div class="stat-number" id="miniClock">--:--</div>
+   <div class="stat-foot">Your browser's local clock</div>
+  </div>
+ </div>
+
+ <div class="columns">
+  <div class="panel">
+   <div class="panel-title">⌘ INTERACTIVE TERMINAL</div>
+   <div class="terminal" id="terminalOutput"><span class="prompt">CyberCore@local:~$</span> Welcome, operator.
+<span class="line">This is a simulated terminal. Type help to see commands.</span>
+<span class="line">No real system scans or network actions are performed.</span></div>
+   <form class="command-row" id="terminalForm">
+    <input id="terminalInput" autocomplete="off" placeholder="Type help and press Enter...">
+    <button class="action" type="submit">RUN ↵</button>
+   </form>
+  </div>
+  <div class="panel">
+   <div class="panel-title">⬡ CYBERSECURITY LAB</div>
+   <div class="tools">
+    <button class="tool" data-command="scan"><b>01 / Demo Scan</b><small>Simulated scan animation</small></button>
+    <button class="tool" data-command="password"><b>02 / Password Tips</b><small>Learn account safety</small></button>
+    <button class="tool" data-command="network"><b>03 / Network Info</b><small>Browser connection status</small></button>
+    <button class="tool" data-command="checklist"><b>04 / Safety Check</b><small>Basic security checklist</small></button>
+   </div>
+  </div>
+ </div>
+
+ <div class="panel" style="margin-top:16px">
+  <div class="panel-title">◷ LIVE ACTIVITY</div>
+  <div class="log" id="activityLog"><span>[SYSTEM]</span> Dashboard initialized.</div>
+ </div>
+</section>
+
+<section class="page" id="terminal">
+ <div class="panel">
+  <div class="panel-title">FULL TERMINAL</div>
+  <p class="subtitle" style="margin-bottom:14px">Try: help, date, about, status, clear</p>
+  <div class="terminal" id="fullTerminal">CyberCore local simulation ready.</div>
+  <form class="command-row" id="fullForm">
+   <input id="fullInput" placeholder="Enter demo command..." autocomplete="off">
+   <button class="action">RUN ↵</button>
+  </form>
+ </div>
+</section>
+
+<section class="page" id="security">
+ <div class="panel">
+  <div class="panel-title">SECURITY LEARNING LAB</div>
+  <p class="subtitle">Safe educational utilities. These demos do not test external systems.</p>
+  <div style="margin-top:20px" class="tools">
+   <button class="tool" data-command="password"><b>Password Hygiene</b><small>Use long, unique passwords and a password manager.</small></button>
+   <button class="tool" data-command="checklist"><b>Account Protection</b><small>Enable multi-factor authentication and review sessions.</small></button>
+   <button class="tool" data-command="network"><b>Connection Info</b><small>View your browser's online/offline indicator.</small></button>
+   <button class="tool" data-command="scan"><b>Simulated Scan</b><small>Watch a visual-only demonstration.</small></button>
+  </div>
+  <div class="progress"><div id="progressBar"></div></div>
+  <p class="subtitle" id="securityResult" style="margin-top:12px">Choose a demo tool to begin.</p>
+ </div>
+</section>
+
+<section class="page" id="activity">
+ <div class="panel">
+  <div class="panel-title">SESSION ACTIVITY LOG</div>
+  <div class="log" id="allLogs">No activity yet.</div>
+  <button class="action" id="clearLogs" style="margin-top:18px">Clear logs</button>
+ </div>
+</section>
+
+<section class="page" id="about">
+ <div class="panel">
+  <div class="panel-title">ABOUT CYBERCORE PRO</div>
+  <h2 class="green" style="margin-bottom:15px">Learn. Build. Secure.</h2>
+  <p class="subtitle">CyberCore Pro is a front-end portfolio project built using HTML, CSS and JavaScript. It demonstrates dashboard layouts, interactive navigation, terminal-style UI and Matrix animation.</p>
+  <br>
+  <p class="subtitle">All terminal responses are simulated. The dashboard does not hack devices, scan real networks or reveal private information.</p>
+  <br>
+  <p class="green">Version 1.0.0 — Educational Demo</p>
+ </div>
+</section>
+
+<footer>CYBERCORE PRO // BUILT WITH HTML, CSS & JAVASCRIPT</footer>
+</main>
+</div>
+</div>
+
+<script>
+// Matrix-style background animation
+const canvas = document.getElementById("matrix");
+const ctx = canvas.getContext("2d");
+let drops = [];
+function resizeMatrix(){
+ canvas.width = innerWidth;
+ canvas.height = innerHeight;
+ drops = Array(Math.ceil(canvas.width/16)).fill(1);
+}
+resizeMatrix();
+addEventListener("resize",resizeMatrix);
+setInterval(()=>{
+ ctx.fillStyle="rgba(5,8,7,0.10)";
+ ctx.fillRect(0,0,canvas.width,canvas.height);
+ ctx.fillStyle="#39ff88";
+ ctx.font="14px monospace";
+ drops.forEach((y,i)=>{
+  ctx.fillText(Math.random()>0.5?"1":"0",i*16,y*16);
+  if(y*16>canvas.height && Math.random()>0.975) drops[i]=0;
+  drops[i]++;
+ });
+},55);
+
+// Live local clock
+function updateClock(){
+ const now = new Date();
+ document.getElementById("clock").textContent =
+  now.toLocaleTimeString();
+ document.getElementById("miniClock").textContent =
+  now.toLocaleTimeString([], {hour:"2-digit",minute:"2-digit"});
+}
+updateClock();
+setInterval(updateClock,1000);
+
+// Navigation
+const pages = {
+ dashboard:["System Overview","Welcome back, operator. Your cyber dashboard is ready."],
+ terminal:["Interactive Terminal","Execute safe, simulated demo commands."],
+ security:["Security Lab","Explore cybersecurity awareness tools."],
+ activity:["Activity Logs","Review actions in this browser session."],
+ about:["About Project","A futuristic cybersecurity learning interface."]
+};
+document.querySelectorAll(".nav").forEach(btn=>{
+ btn.addEventListener("click",()=>{
+  document.querySelectorAll(".nav").forEach(b=>b.classList.remove("active"));
+  document.querySelectorAll(".page").forEach(p=>p.classList.remove("active"));
+  btn.classList.add("active");
+  document.getElementById(btn.dataset.page).classList.add("active");
+  document.getElementById("pageTitle").textContent=pages[btn.dataset.page][0];
+  document.getElementById("pageDesc").textContent=pages[btn.dataset.page][1];
+  document.getElementById("sidebar").classList.remove("open");
+ });
+});
+document.getElementById("menuBtn").onclick=()=>{
+ document.getElementById("sidebar").classList.toggle("open");
+};
+
+// Terminal simulation
+let commandCount=0;
+let logs=[];
+function addLog(message){
+ const time=new Date().toLocaleTimeString();
+ logs.unshift("["+time+"] "+message);
+ logs=logs.slice(0,40);
+ document.getElementById("activityLog").innerHTML=
+  logs.slice(0,5).map(s=>"<span>[LOG]</span> "+escapeHTML(s)).join("<br>");
+ document.getElementById("allLogs").innerHTML=
+  logs.map(s=>"<span>[LOG]</span> "+escapeHTML(s)).join("<br>")||"No activity yet.";
+}
+function escapeHTML(str){
+ return String(str).replace(/[&<>"']/g,c=>({
+  "&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"
+ }[c]));
+}
+function runCommand(raw,target){
+ const cmd=raw.trim().toLowerCase();
+ if(!cmd)return;
+ const out=document.getElementById(target);
+ const responses={
+  help:"Available commands: help, date, about, status, clear",
+  date:new Date().toString(),
+  about:"CyberCore Pro - local educational dashboard.",
+  status:"Dashboard online. No external scans running."
+ };
+ let result=responses[cmd];
+ if(cmd==="clear"){out.textContent="Terminal cleared.";addLog("Terminal cleared");return;}
+ if(!result)result="Unknown demo command. Type help to view commands.";
+ out.innerHTML+="\n\n<span class='prompt'>operator@local:~$</span> "+escapeHTML(raw)+
+  "\n<span class='line'>"+escapeHTML(result)+"</span>";
+ out.scrollTop=out.scrollHeight;
+ commandCount++;
+ document.getElementById("cmdCount").textContent=commandCount;
+ addLog("Command executed: "+cmd);
+}
+document.getElementById("terminalForm").onsubmit=e=>{
+ e.preventDefault();
+ runCommand(document.getElementById("terminalInput").value,"terminalOutput");
+ document.getElementById("terminalInput").value="";
+};
+document.getElementById("fullForm").onsubmit=e=>{
+ e.preventDefault();
+ runCommand(document.getElementById("fullInput").value,"fullTerminal");
+ document.getElementById("fullInput").value="";
+};
+
+// Safe demo utilities
+document.querySelectorAll("[data-command]").forEach(btn=>{
+ btn.addEventListener("click",()=>{
+  const command=btn.dataset.command;
+  const result=document.getElementById("securityResult");
+  const bar=document.getElementById("progressBar");
+  const messages={
+   scan:"Demo complete: visual simulation only. No real devices or networks were scanned.",
+   password:"Tip: use long, unique passwords, a password manager and multi-factor authentication.",
+   network:"Browser online status: "+(navigator.onLine?"Online":"Offline")+". This does not reveal your IP address.",
+   checklist:"Checklist: update software, enable MFA, use unique passwords and review account recovery settings."
+  };
+  result.textContent=messages[command];
+  bar.style.width="100%";
+  setTimeout(()=>bar.style.width="0%",1200);
+  addLog("Opened safety demo: "+command);
+ });
+});
+document.getElementById("clearLogs").onclick=()=>{
+ logs=[];
+ document.getElementById("activityLog").textContent="Logs cleared.";
+ document.getElementById("allLogs").textContent="No activity yet.";
+};
+</script>
+</body>
+</html>
